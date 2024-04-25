@@ -1,0 +1,93 @@
+# AttributeVariants
+
+Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/attribute_variants`. To experiment with that code, run `bin/console` for an interactive prompt.
+
+TODO: Delete this and the text above, and describe your gem
+
+## Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'attribute_variants'
+```
+
+And then execute:
+
+    $ bundle install
+
+Or install it yourself as:
+
+    $ gem install attribute_variants
+
+## Usage
+
+TODO: Write usage instructions here
+
+## Development
+
+After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+
+To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+
+## Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/attribute_variants. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/attribute_variants/blob/master/CODE_OF_CONDUCT.md).
+
+## License
+
+The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+
+## Code of Conduct
+
+Everyone interacting in the AttributeVariants project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/attribute_variants/blob/master/CODE_OF_CONDUCT.md).
+
+## Setting base attributes
+
+```ruby
+class Button < Component
+ attributes(
+    base: {
+      class: %w[
+        inline-flex items-center justify-center
+        whitespace-nowrap rounded-md text-sm font-medium
+        transition-colors focus-visible:outline-none focus-visible:ring-1 
+        focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 
+        h-9
+      ],
+      data:
+      {
+        controller: "button_controller"
+      }
+    }, 
+    variants: {
+      color: {
+        primary: { class: %w[bg-primary text-primary-foreground shadow hover:bg-primary/90] },
+        secondary: { class: %w[bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80] },
+        destructive: { class: %w[bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90] },
+        outline: { class: %w[border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground] },
+        ghost: { class: %w[hover:bg-accent hover:text-accent-foreground] },
+        link: { class: %w[text-primary underline-offset-4 hover:underline] }
+      }, 
+      type: {
+        button: {
+          type: "button"
+        },
+        submit: {
+          type: "submit"
+        },
+        reset: {
+          type: "reset"
+        }
+      },
+      size: {
+        sm: { class: %w[px-2.5 py-1] },
+        md: { class: %w[px-3 py-1.5] },
+        lg: { class: %w[px-3.5 py-2] },
+        xl: { class: %w[px-4 py-2.5] }
+      }
+    },
+    defaults: { variant: :color, type: :button, size: :sm })
+end
+```
+
