@@ -1,242 +1,202 @@
 # frozen_string_literal: true
 
 RSpec.describe AttributeVariants do
+  # id: { append: "10" },
+  # name: "name",
+  # name2: [{set: 'hello'}, {append: "world"}],
+  # data: {
+  #   controller: ["asdfsa", "asdfsaf"],
+  #   context: { set: "10" },
+  #   test:{
+  #     multiple:
+  #     {
+  #       test2: "123"
+  #       levels:
+  #       {
+  #         set: "100"
+  #       }
+  #     }
+  #   }
+  # }
+
+  # id: { append: "10" },
+  # name: { set: "name" },
+  # name2: [{ set: 'hello' }, { append: "world" }],
+  # data: {
+  #   controller: {set: ["asdfsa", "asdfsaf"]},
+  #   context: { set: "10" },
+  #   test: {
+  #     multiple:
+  #     {
+  #       test2: {set: "123"}
+  #       levels:
+  #       {
+  #         set: {set: "100"}
+  #       }
+  #     }
+  #   }
+  # }
+
   it "has a version number" do
     expect(AttributeVariants::VERSION).not_to be nil
   end
 
-  it "handles empty state" do
-    engine = AttributeVariants::Engine.new
-    expect(engine.render).to eq({})
-  end
-
-  it "correctly outputs base attributes" do
-    engine = AttributeVariants::Engine.new(
-      base: {
-        id: 10,
-        class: %w[inline-flex items-center justify-center],
-        style: "color: red;",
-        data: {
-          controller: "stimulus_controller"
-        }
+  it "correctly handles s" do
+    engine = AttributeVariants::AttributeSet.new(base: {
+                                                   accept_button:
+                                                   {
+                                                     variant: {color: :destructive}
+                                                   },
+                                                   card:
+      {
+        class: %w[rounded-xl border bg-card text-card-foreground shadow w-[350px]]
       }
-    )
-    expect(engine.render).to eq({
-      id: 10,
-      class: %w[inline-flex items-center justify-center],
-      style: "color: red;",
-      data: {
-        controller: "stimulus_controller"
-      }
-    })
-  end
-
-  it "correctly outputs default attributes" do
-    engine = AttributeVariants::Engine.new(base: {
-                                             id: 10,
-                                             class: %w[inline-flex items-center justify-center],
-                                             style: "color: red;",
-                                             data: {
-                                               controller: "stimulus_controller"
-                                             }
-                                           },
+                                                 },
       variants: {
-        color: {
-          primary: {
-            class: %w[bg-blue-500 text-white]
+        style: {
+          one: {
+            accept_button:
+            {
+              variant: {color: :primary}
+            },
+            card:
+            {
+              class: {append: "bg-purple-400"}
+            }
           },
-          secondary: {
-            class: %w[bg-purple-500 text-white]
+          two: {
+            accept_button:
+            {
+              variant: {color: :secondary}
+            },
+            card: {class: {append: "bg-purple-400"}}
           }
-        },
-        size: {
-          sm: {class: "text-sm"},
-          md: {class: "text-base"},
-          lg: {class: "px-4 py-3 text-lg"}
         }
       },
-      defaults: {color: :primary, size: :sm})
+      defaults: {style: :one})
 
     expect(engine.render).to eq({
-      id: 10,
-      class: "inline-flex items-center justify-center bg-blue-500 text-white text-sm",
-      style: "color: red;",
-      data: {
-        controller: "stimulus_controller"
+      adjust: {
+        class: [{set: ["bg-blue-500", "text-white"]}]
       }
     })
   end
 
-  it "variant selection works, adds values" do
-    engine = AttributeVariants::Engine.new(base: {
-                                             id: 10,
-                                             class: %w[inline-flex items-center justify-center],
-                                             style: "color: red;",
-                                             data: {
-                                               controller: "stimulus_controller"
-                                             }
-                                           },
+  it "correctly resolves" do
+    engine = AttributeVariants::AttributeSet.new
+    expect(engine.execute_and_merge_operations(
+      {accept_button: {variant: {color: :primary}, adjust: {}}, card: {adjust: {class: [{set: ["rounded-xl", "border", "bg-card", "text-card-foreground", "shadow", "w-[350px]"]}], append: ["bg-purple-400"]}}}
+    )).to eq({
+      test: "!"
+    })
+  end
+
+  it "testsss" do
+    engine = AttributeVariants::AttributeSet.new(base: {
+                                                   accept_button:
+                                                   {
+                                                     variant: {color: :destructive}
+                                                   },
+                                                   card:
+      {
+        class: %w[rounded-xl border bg-card text-card-foreground shadow w-[350px]]
+      }
+                                                 },
       variants: {
-        color: {
-          primary: {
-            class: %w[bg-blue-500 text-white]
+        style: {
+          one: {
+            accept_button:
+            {
+              variant: {color: :primary}
+            },
+            card: {
+              class: {append: "bg-purple-400"}
+            }
           },
-          secondary: {
-            class: %w[bg-purple-500 text-white]
+          two: {
+            accept_button:
+            {
+              variant: {color: :secondary}
+            },
+            card: {
+              class: {append: "bg-blue-400"}
+            }
           }
-        },
-        size: {
-          sm: {style: "border-radius:40px;", class: "text-sm"},
-          md: {class: "text-base"},
-          lg: {class: "px-4 py-3 text-lg"}
         }
       },
-      defaults: {color: :primary, size: :sm})
-
-    expect(engine.render(variants: {color: :secondary})).to eq({
-      id: 10,
-      class: "inline-flex items-center justify-center bg-purple-500 text-white text-sm",
-      style: "color: red; border-radius:40px;",
-      data: {
-        controller: "stimulus_controller"
-      }
-    })
-
-    expect(engine.render(variants: {color: :secondary, size: :lg})).to eq({
-      id: 10,
-      class: "inline-flex items-center justify-center bg-purple-500 text-white px-4 py-3 text-lg",
-      style: "color: red;",
-      data: {
-        controller: "stimulus_controller"
-      }
-    })
+      defaults: {style: :one})
   end
 
-  it "correctly computes compound variants" do
-    engine = AttributeVariants::Engine.new(
+  it "works?" do
+    engine = AttributeVariants::AttributeSet.new(
       base: {
-        class: %w[inline-flex items-center justify-center]
+        class: %w[
+          inline-flex items-center justify-center
+          whitespace-nowrap rounded-md text-sm font-medium
+          transition-colors focus-visible:outline-none focus-visible:ring-1
+          focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50
+          h-9 px-4 py-2
+        ]
       },
       variants: {
         color: {
-          primary: {
-            class: %w[bg-blue-500 text-white]
-          },
-          secondary: {
-            class: %w[bg-purple-500 text-white]
-          }
+          primary: {class: {append: [10, 11, "23"]}},
+          secondary: {class: {append: %w[bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80]}},
+          destructive: {class: {append: %w[bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90]}},
+          outline: {class: {append: %w[border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground]}},
+          ghost: {class: {append: %w[hover:bg-accent hover:text-accent-foreground]}},
+          link: {class: {append: %w[text-primary underline-offset-4 hover:underline]}}
         },
-        size: {
-          sm: {class: "text-sm"},
-          md: {class: "text-base"},
-          lg: {class: "px-4 py-3 text-lg"}
+        type: {
+          button: {
+            type: "button"
+          },
+          submit: {
+            type: "submit"
+          },
+          reset: {
+            type: "reset"
+          }
         }
       },
-      compounds: [{
-        variants: {
-          color: :primary,
-          size: :md
-        },
-        attributes: {
-          class: "uppercase"
-        }
-      }],
-      defaults: {color: :primary, size: :md}
+      defaults: {color: :primary, type: :button}
     )
 
     expect(engine.render).to eq({
-      class: "inline-flex items-center justify-center bg-blue-500 text-white text-base uppercase"
-    })
-
-    expect(engine.render(variants: {size: :sm})).to eq({
-      class: "inline-flex items-center justify-center bg-blue-500 text-white text-sm"
+      adjust: {
+        class: [{set: ["bg-blue-500", "text-white"]}]
+      }
     })
   end
 
-  it "correctly overrides attributes" do
-    engine = AttributeVariants::Engine.new(
-      base: {
-        class: %w[inline-flex items-center justify-center]
-      },
-      variants: {
-        color: {
-          primary: {
-            class: %w[bg-blue-500 text-white]
-          },
-          secondary: {
-            class: %w[bg-purple-500 text-white]
-          }
-        },
-        size: {
-          sm: {class: "text-sm"},
-          md: {class: "text-base"},
-          lg: {class: "px-4 py-3 text-lg"}
+  it "new define" do
+    resolver = AttributeVariants::Resolver.new
+    resolver.define("component") do
+      {
+        base: {
+          class: %w[
+            inline-flex items-center justify-center
+            whitespace-nowrap rounded-md text-sm font-medium
+            transition-colors focus-visible:outline-none focus-visible:ring-1
+            focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50
+            h-9 px-4 py-2
+          ]
         }
-      },
-      compounds: [{
-        variants: {
-          color: :primary,
-          size: :md
-        },
-        attributes: {
-          class: "uppercase"
-        }
-      }],
-      defaults: {color: :primary, size: :md}
-    )
-
-    expect(engine.render(attributes: {
-      class: "color-red"
-    })).to eq({
-      class: "inline-flex items-center justify-center bg-blue-500 text-white text-base uppercase color-red"
-    })
+      }
+    end
   end
 
-  # it "correctly handles sub-components" do
-  #   engine = AttributeVariants::Engine.new(
-  #     base: [
-  #       avatar: {
-  #         class: %w[ inline-flex items-center justify-center ]
-  #       },
-  #       accept_button: {
-  #         variants: {
-  #           color: :primary,
-  #           size: :sm
-  #         }
-  #       }
-  #     ],
-  #     variants: {
-  #       type: {
-  #         one: {
-  #           avatar: { class: %w(bg-blue-500 text-white) },
-  #           accept_button: {
-  #             variants: {
-  #               color: :primary,
-  #               size: :sm
-  #             }
-  #           }
-  #         },
-  #         two: {
-  #           avatar: { class: %w(bg-purple-500 text-white) },
-  #           accept_button: {
-  #             variants: {
-  #               color: :secondary,
-  #               size: :lg
-  #             }
-  #           }
-  #         }
-  #       }
-  #     },
-  #     defaults:{ type: :one })
+  it "correctly works with registry" do
+    registry = AttributeVariants::Registry.new
+    registry.register(base: {})
+    expect(registry.register).to eq(true)
+  end
 
-  #     puts engine.render.inspect
-  #  # expect(engine.render).to eq({
-  #   #  class: "inline-flex items-center justify-center bg-blue-500 text-white text-base uppercase color-red"
-  #   #})
-  # end
-
+  # expect(engine.render).to eq({
+  #  class: "inline-flex items-center justify-center bg-blue-500 text-white text-base uppercase color-red"
+  # })
   # it "accounts for replacing" do
-  #   engine = AttributeVariants::Engine.new(base: {
+  #   engine = AttributeVariants::AttributeSet.new(base: {
   #     id:  10,
   #     class: %w[ inline-flex items-center justify-center ],
   #     style: "color: red;",

@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "attribute_variants/version"
-require_relative "attribute_variants/engine"
+require_relative "attribute_variants/attribute_configuration"
+
+require_relative "attribute_variants/dsl/engine"
 
 module AttributeVariants
   def self.included(base)
@@ -9,21 +11,27 @@ module AttributeVariants
   end
 
   module ClassMethods
-    def attributes(base: {}, variants: {}, defaults: {}, compounds: {})
-      @attribute_engine = AttributeVariants::Engine.new(base: base, variants: variants, defaults: defaults, compounds: compounds)
+    def attributes(&block)
+      result = DSL::Engine.new.build(&block)
+      config = attribute_configuration
+      config.base = result.base_attr
+      config.variants = result.variants
+      config.defaults = result.defaults
+      config.compounds = result.compounds
+      config.parse
     end
 
-    def attribute_engine
-      @attribute_engine ||=
-        if superclass.respond_to?(:attribute_engine)
-          superclass.attribute_engine.dup
+    def attribute_configuration
+      @attribute_configuration ||=
+        if superclass.respond_to?(:attribute_configuration)
+          superclass.attribute_configuration.dup
         else
-          AttributeVariants::Engine.new
+          AttributeConfiguration.new
         end
     end
   end
 
-  def tags(variants: {}, attributes: {})
-    self.class.attribute_engine.render(variants: variants, attributes: attributes)
+  def attributes(slot: :default, variant: {}, adjust: {})
+    self.class.attribute_configuration&.compile(variant: variant, adjust: adjust)&.dig(slot)
   end
 end
