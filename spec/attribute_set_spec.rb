@@ -1,10 +1,10 @@
-RSpec.describe AttributeVariants::AttributeSet do
+RSpec.describe Attrify::AttributeConfiguration do
   it "handles empty state" do
-    expect(AttributeVariants::AttributeSet.new.compile).to eq({})
+    expect(Attrify::AttributeConfiguration.new.compile).to eq({})
   end
 
   it "correctly outputs base attributes" do
-    set = AttributeVariants::AttributeSet.new(
+    set = Attrify::AttributeConfiguration.new(
       base: {
         id: 10,
         class: %w[inline-flex items-center justify-center],
@@ -13,11 +13,11 @@ RSpec.describe AttributeVariants::AttributeSet do
           controller: "stimulus_controller"
         }
       }
-    )
+    ).compile
 
-    expect(set.compile).to eq(
+    expect(set).to eq(
       {
-        component:
+        default:
         {
           adjust: {
             id: [{set: ["10"]}],
@@ -33,7 +33,7 @@ RSpec.describe AttributeVariants::AttributeSet do
   end
 
   it "correctly outputs default attributes" do
-    set = AttributeVariants::AttributeSet.new(
+    set = Attrify::AttributeConfiguration.new(
       base: {
         id: 10,
         class: %w[inline-flex items-center justify-center],
@@ -61,7 +61,7 @@ RSpec.describe AttributeVariants::AttributeSet do
     )
 
     expect(set.compile).to eq({
-      component:
+      default:
       {
         adjust: {
           id: [{set: ["10"]}],
@@ -76,7 +76,7 @@ RSpec.describe AttributeVariants::AttributeSet do
   end
 
   it "variant selection works, adds values" do
-    set = AttributeVariants::AttributeSet.new(
+    set = Attrify::AttributeConfiguration.new(
       base: {
         id: 10,
         class: %w[inline-flex items-center justify-center],
@@ -103,7 +103,7 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {color: :primary, size: :sm}
     )
 
-    expect(set.compile_and_run({variant: {color: :secondary}})[:component][:adjust]).to eq({
+    expect(set.compile_and_run({variant: {color: :secondary}})[:default][:adjust]).to eq({
       id: "10",
       class: "text-sm inline-flex items-center justify-center bg-purple-500 text-white",
       style: "color: red; border-radius:40px;",
@@ -112,7 +112,7 @@ RSpec.describe AttributeVariants::AttributeSet do
       }
     })
 
-    expect(set.compile_and_run({variant: {color: :secondary, size: :lg}})[:component][:adjust]).to eq({
+    expect(set.compile_and_run({variant: {color: :secondary, size: :lg}})[:default][:adjust]).to eq({
       id: "10",
       class: "px-4 py-3 text-lg",
       style: "color: red;",
@@ -123,7 +123,7 @@ RSpec.describe AttributeVariants::AttributeSet do
   end
 
   it "correctly computes compound variants" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         class: %w[inline-flex items-center justify-center]
       },
@@ -147,24 +147,28 @@ RSpec.describe AttributeVariants::AttributeSet do
           color: :primary,
           size: :md
         },
-        attributes: {
+        adjust: {
           class: "uppercase"
         }
       }],
       defaults: {color: :primary, size: :md}
     )
 
-    expect(engine.render).to eq({
+    expect(engine.compile).to eq({
       class: %w[inline-flex items-center justify-center bg-blue-500 text-white text-base uppercase]
     })
 
-    expect(engine.render(attributes: {variant: {size: :sm}})).to eq({
+    expect(engine.compile_and_run).to eq({
+      class: %w[inline-flex items-center justify-center bg-blue-500 text-white text-base uppercase]
+    })
+
+    expect(engine.compile_and_run(attributes: {variant: {size: :sm}})).to eq({
       class: %w[inline-flex items-center justify-center bg-blue-500 text-white text-sm]
     })
   end
 
   it "correctly overrides attributes" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         class: %w[inline-flex items-center justify-center]
       },
@@ -195,15 +199,15 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {color: :primary, size: :md}
     )
 
-    expect(engine.render(attributes: {
+    expect(engine.compile_and_run(
       adjust: {class: "color-red"}
-    })).to eq({
+    )).to eq({
       class: %w[inline-flex items-center justify-center bg-blue-500 text-white text-base uppercase color-red]
     })
   end
 
   it "handles remove operation" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         class: %w[inline-flex items-center justify-center]
       },
@@ -227,13 +231,13 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {color: :primary, size: :md}
     )
 
-    expect(engine.render).to eq({
+    expect(engine.compile_and_run).to eq({
       class: %w[items-center justify-center text-base]
     })
   end
 
   it "handles append operation" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         class: %w[inline-flex items-center justify-center]
       },
@@ -257,13 +261,13 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {size: :md, color: :primary}
     )
 
-    expect(engine.render).to eq({
+    expect(engine.compile_and_run).to eq({
       class: %w[inline-flex items-center justify-center text-base text-sm]
     })
   end
 
   it "handles the set operation" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         class: %w[inline-flex items-center justify-center]
       },
@@ -287,13 +291,13 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {size: :md, color: :primary}
     )
 
-    expect(engine.render).to eq({
+    expect(engine.compile_and_run).to eq({
       class: %w[text-sm]
     })
   end
 
   it "handles the prepend operation" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         class: %w[inline-flex items-center justify-center]
       },
@@ -317,13 +321,13 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {size: :md, color: :primary}
     )
 
-    expect(engine.render).to eq({
+    expect(engine.compile_and_run).to eq({
       class: %w[text-sm inline-flex items-center justify-center text-base]
     })
   end
 
   it "handles multiple operations" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         class: %w[inline-flex items-center justify-center]
       },
@@ -348,13 +352,13 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {size: :md, color: :primary}
     )
 
-    expect(engine.render).to eq({
+    expect(engine.compile_and_run).to eq({
       class: %w[text-sm inline-flex items-center justify-center text-base hello world]
     })
   end
 
   it "handles data attribute and operations" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         class: %w[inline-flex items-center justify-center],
         data:
@@ -388,13 +392,13 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {size: :md, color: :primary}
     )
 
-    expect(engine.render).to eq({
+    expect(engine.compile_and_run).to eq({
       class: %w[text-sm inline-flex items-center justify-center text-base hello world]
     })
   end
 
   it "correctly handles sub-components" do
-    engine = AttributeVariants::AttributeSet.new(
+    engine = Attrify::AttributeConfiguration.new(
       base: {
         avatar: {
           class: %w[inline-flex items-center justify-center]
@@ -431,7 +435,7 @@ RSpec.describe AttributeVariants::AttributeSet do
       defaults: {type: :one}
     )
 
-    expect(engine.render[:avatar]).to eq({
+    expect(engine.compile_and_run[:avatar]).to eq({
       adjust: {
         class: [{set: ["bg-blue-500", "text-white"]}]
       }

@@ -2,37 +2,35 @@
 
 require "action_view"
 
-module AttributeVariants
+module Attrify
   class AttributeSet
     include ActionView::Helpers::TagHelper
 
-    attr_reader :value
-    
-    def initialize(value:)
+    def initialize(value)
       @value = value
     end
 
     def to_html
-      attributes = execute(value)
+      attributes = execute(@value)
 
-      if attributes.keys.count > 1 && attributes.key?(:default)
+      if attributes.keys.count > 1 && attributes.key?(:main)
         return "ERROR: can't convert multiple components to HTML"
       end
 
-      # The default component
-      if attributes.key?(:default)
-        attributes = attributes[:default]
+      # The main component
+      if attributes.key?(:main)
+        attributes = attributes[:main]
       end
 
       if attributes.key?(:variant)
         return "ERROR: can't convert a variant to HTML"
       end
-      
+
       attributes[:adjust] if attributes.key?(:adjust)
     end
 
     def with_procs(instance)
-      AttributeSet.new(value: run_procs(value, instance))
+      AttributeSet.new(value: run_procs(@value, instance))
     end
 
     def to_hash
@@ -69,9 +67,9 @@ module AttributeVariants
     end
 
     def dig(*keys)
-      result = value.dig(*keys)
+      result = @value.dig(*keys)
       if !result.nil?
-        return AttributeSet.new(value: result)
+        return AttributeSet.new(result)
       end
 
       # result = data
@@ -82,6 +80,10 @@ module AttributeVariants
 
       # You could use variant and adjust here to modify the result if needed
       result
+    end
+
+    def run 
+      return execute(@value)
     end
 
     private

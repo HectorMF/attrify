@@ -1,18 +1,15 @@
-module AttributeVariants
+require "attrify/dsl/nested_variant"
+
+module Attrify
   module DSL
-    class NestedVariant
+    class Variant
       def initialize
         @variants = {}
       end
 
       def build(&block)
-        result = instance_eval(&block)
-        @variants.merge!(result) if result.is_a?(Hash)
+        instance_eval(&block)
         @variants
-      end
-
-      def slot(name, attributes)
-        @variants[name] = attributes
       end
 
       def respond_to_missing?(name, include_private = false)
@@ -20,10 +17,10 @@ module AttributeVariants
       end
 
       def method_missing(name, *args, &block)
-        # Handle the case where the slot is provided as a block
+        # Handle the case where the variant is provided as a block
         if block
-          @variants[name] = instance_eval(&block)
-        # Handle the case where the slot is provided directly as a hash
+          @variants[name] = NestedVariant.new.build(&block)
+        # Handle the case where the variant is provided directly as a hash
         elsif args.length == 1 && args[0].is_a?(Hash)
           @variants[name] = args[0]
         else
