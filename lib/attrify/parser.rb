@@ -101,7 +101,7 @@ module Attrify
         when Hash
           # Check if the hash is a simple operation or needs further parsing
           if is_simple_operation?(value)
-            value.transform_values { |v| v.is_a?(Array) ? v.map(&:to_s) : [v.to_s] }
+            value.transform_values { |v| v.is_a?(Array) ? v.map { |x| x.is_a?(Proc) ? x : x.to_s } : [v.is_a?(Proc) ? v : v.to_s] }
           else
             value.transform_values { |v|
               parsed_operation = parse_operations(v)
@@ -117,7 +117,7 @@ module Attrify
           if array_of_operations?(value)
             value.map { |v| parse_operations(v) }
           else
-            {set: value.map(&:to_s)}
+            {set: value.map { |v| v.is_a?(Proc) ? v : v.to_s }}
           end
         when Proc
           # For procs, wrap them in a `set` operation

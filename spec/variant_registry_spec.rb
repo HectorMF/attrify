@@ -1,11 +1,11 @@
 RSpec.describe Attrify::VariantRegistry do
   describe "handles empty and base attributes" do
     it "returns an empty attribute set when no attributes are defined" do
-      expect(Attrify::VariantRegistry.new.fetch.value).to eq({})
+      expect(Attrify::VariantRegistry.new.fetch.operations).to eq({})
     end
 
     it "returns base attributes when no variants are specified" do
-      set = Attrify::VariantRegistry.new(
+      variant = Attrify::VariantRegistry.new(
         base: {
           id: 10,
           class: %w[inline-flex items-center justify-center],
@@ -14,7 +14,7 @@ RSpec.describe Attrify::VariantRegistry do
         }
       ).fetch()
 
-      expect(set.value).to eq(
+      expect(variant.operations).to eq(
         {
           main: {
             adjust: {
@@ -33,7 +33,7 @@ RSpec.describe Attrify::VariantRegistry do
 
   describe "handles variants" do
     it "correctly returns default variants when non are fetched" do
-      set = Attrify::VariantRegistry.new(
+      variant = Attrify::VariantRegistry.new(
         base: {
           id: 10,
           class: %w[inline-flex items-center justify-center],
@@ -54,7 +54,7 @@ RSpec.describe Attrify::VariantRegistry do
         defaults: { color: :primary, size: :sm }
       ).fetch
 
-      expect(set.value).to eq({
+      expect(variant.operations).to eq({
         main: {
           adjust: {
             id: [{set: ["10"]}],
@@ -91,7 +91,7 @@ RSpec.describe Attrify::VariantRegistry do
       }
 
       it "applies secondary color variant with default size" do
-        expect(registry.fetch(variant: {color: :secondary}).value).to eq({
+        expect(registry.fetch(variant: {color: :secondary}).operations).to eq({
           main: {
             adjust: {
               id: [{set: ["10"]}],
@@ -104,7 +104,7 @@ RSpec.describe Attrify::VariantRegistry do
       end
 
       it "applies primary color and large size variants" do
-        expect(registry.fetch(variant: {color: :primary, size: :lg}).value).to eq({
+        expect(registry.fetch(variant: {color: :primary, size: :lg}).operations).to eq({
           main: {
             adjust: {
               id: [{set: ["10"]}],
@@ -142,7 +142,7 @@ RSpec.describe Attrify::VariantRegistry do
     }
 
     it "returns expected set when non-compound is asked for" do
-      expect(registry.fetch(variant: {size: :sm}).value).to eq({
+      expect(registry.fetch(variant: {size: :sm}).operations).to eq({
         main: {
           adjust: {
             class: [{set: %w[inline-flex items-center justify-center]}, {set: %w[bg-blue-500 text-white]}, {set: %w[text-sm]}]
@@ -152,7 +152,7 @@ RSpec.describe Attrify::VariantRegistry do
     end
 
     it "returns the correct compound variant" do
-      expect(registry.fetch.value).to eq({
+      expect(registry.fetch.operations).to eq({
         main: {
           adjust: {
             class: [{set: %w[inline-flex items-center justify-center]}, {set: %w[bg-blue-500 text-white]}, {set: %w[text-base]}, {append: %w[uppercase]}]
@@ -186,7 +186,7 @@ RSpec.describe Attrify::VariantRegistry do
     }
 
     it "correctly overrides attributes with adjustments" do
-      expect(registry.fetch(adjust: {class: {append: "color-red"}}).value).to eq({
+      expect(registry.fetch(adjust: {class: {append: "color-red"}}).operations).to eq({
         main: {
           adjust: {
             class: [{set: %w[inline-flex items-center justify-center]},
@@ -224,7 +224,7 @@ RSpec.describe Attrify::VariantRegistry do
     }
 
     it "returns correct slot attributes for default variant" do
-      expect(registry.fetch.value).to eq({
+      expect(registry.fetch.operations).to eq({
         avatar: {
           adjust: {
             class: [{set: %w[inline-flex items-center justify-center]}, {set: %w[bg-blue-500 text-white]}]
@@ -240,7 +240,7 @@ RSpec.describe Attrify::VariantRegistry do
     end
 
     it "returns correct slot attributes for a different variant" do
-      expect(registry.fetch(variant: {type: :two}).value).to eq({
+      expect(registry.fetch(variant: {type: :two}).operations).to eq({
         avatar: {
           adjust: {
             class: [{set: %w[inline-flex items-center justify-center]}, {append: %w[bg-purple-500 text-white]}]
@@ -301,7 +301,7 @@ RSpec.describe Attrify::VariantRegistry do
     }
 
     it "returns default slot variants and adjustments" do
-      expect(registry.fetch.value).to eq({
+      expect(registry.fetch.operations).to eq({
         button: {
           variant: { color: :primary }
         },
@@ -314,7 +314,7 @@ RSpec.describe Attrify::VariantRegistry do
     end
 
     it "applies compound variants for button and card slots" do
-      expect(registry.fetch(variant: {color: :primary}).value).to eq({
+      expect(registry.fetch(variant: {color: :primary}).operations).to eq({
         button: {
           variant: { color: :destructive },
           adjust: { class: [{append: ["w-100"]}, {append: ["w-300"]}] }

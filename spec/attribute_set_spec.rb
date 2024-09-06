@@ -19,6 +19,24 @@ RSpec.describe Attrify::AttributeSet do
     })
   end
 
+  it "handles procs" do
+    set = Attrify::AttributeSet.new({
+      main: {
+        adjust: {
+          class: [{set: ->{Time.now.to_s}}]
+        }
+      }
+    })
+
+    expect(set.evaluate_procs(self)).to eq({
+      main: {
+        adjust: {
+          class: "items-center justify-center"
+        }
+      }
+    })
+  end
+
   # it "handles append operation" do
   #   engine = Attrify::VariantRegistry.new(
   #     base: {

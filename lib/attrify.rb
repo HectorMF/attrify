@@ -37,15 +37,12 @@ module Attrify
     variant = @attr_options[:variant] ? @attr_options[:variant].merge(variant) : variant
     adjust = @attr_options[:adjust] ? @attr_options[:adjust].merge(adjust) : adjust
 
-
+    # Fetch the variant and safely dig into the nested slots
+    variant = self.class.variant_registry&.fetch(variant: variant, adjust: adjust)
     # Explicitly handle single or multiple slots
     slots = slot.is_a?(Array) ? slot : [slot] 
-
-    # Fetch the attribute set and safely dig into the nested slots
-    attribute_set = self.class.variant_registry&.fetch(variant: variant, adjust: adjust)
-  
     # Use dig if we have a valid attribute set
-    attribute_set.dig(*slots)
+    variant.dig(*slots).evaluate_procs(self)
   end
 
   # Add a `with_attribs` method to handle attribute merging

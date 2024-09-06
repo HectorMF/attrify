@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    attrify (0.2.0)
+    attrify (0.3.0)
       actionview (> 7.0)
       activesupport (> 7.0)
 

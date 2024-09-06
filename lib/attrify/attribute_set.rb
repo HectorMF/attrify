@@ -5,148 +5,94 @@ require "action_view"
 module Attrify
   class AttributeSet
     include ActionView::Helpers::TagHelper
-    attr_reader :value
+
+    attr_reader :operations
     attr_reader :has_procs
+    attr_reader :attributes
 
-    def initialize(value)
-      @value = value
-      @has_procs = false
+    def initialize(attributes, has_procs = false)
+      @has_procs = has_procs
+      @attributes = attributes
     end
-
+    
     def to_html
-      attributes = execute(@value)
-
-      if attributes.keys.count > 1 && attributes.key?(:main)
+      if @attributes.keys.count > 1 && @attributes.key?(:main)
         return "ERROR: can't convert multiple components to HTML"
       end
 
       # The main component
-      if attributes.key?(:main)
-        attributes = attributes[:main]
+      if @attributes.key?(:main)
+        @attributes = @attributes[:main]
       end
 
-      if attributes.key?(:variant)
+      if @attributes.key?(:variant)
         return "ERROR: can't convert a variant to HTML"
       end
 
-      attributes[:adjust] if attributes.key?(:adjust)
+      tag.attributes(@attributes[:adjust]) if @attributes.key?(:adjust)
     end
 
-    def with_procs(instance)
-      AttributeSet.new(run_procs(@value, instance))
+    def evaluate_procs(instance)
+      if @has_procs
+        AttributeSet.new(run_procs_on(@attributes, instance), false)
+      else
+        self
+      end
     end
 
     def to_hash
-      @value
+      @attributes
     end
 
     # Retrieve value by key
     def [](key)
-      @value[key]
+      @attributes[key]
     end
 
     # Set value by key
     def []=(key, value)
-      @value[key] = value
+      @attributes[key] = value
     end
 
     # Iterate like a hash
     def each(&block)
-      @value.each(&block)
+      @attributes.each(&block)
     end
 
     # Return all keys
     def keys
-      @value.keys
+      @attributes.keys
     end
 
     # Return all values
     def values
-      @value.values
+      @attributes
     end
 
     def to_s
-      tag.attributes(to_html)
-    end
-
-    def dig(*keys)
-      result = @value.dig(*keys)
-      if !result.nil?
-        return AttributeSet.new(result)
-      end
-
-      # result = data
-      # keys.each do |key|
-      #   return nil unless result.is_a?(Hash) && result.key?(key)
-      #   result = result[key]
-      # end
-
-      # You could use variant and adjust here to modify the result if needed
-      result
-    end
-
-    def run 
-      return execute(@value)
+      to_html
     end
 
     private
 
-    def run_procs(hash, instance)
-      results = {}
-      hash.each do |key, operations|
-        if operations.is_a?(Hash)
-          results[key] = run_procs(operations, instance)
-        elsif operations.is_a?(Array)
-          results[key] = operations.map do |operation_hash|
-            operation_hash.transform_values do |values|
-              values.map do |value|
-                value.is_a?(Proc) ? instance.instance_exec(&value) : value
-              end
-            end
+    # Recursively traverse a hash and run any procs
+    def run_procs_on(hash, instance)
+      hash.each_with_object({}) do |(key, value), processed_hash|
+        if value.is_a?(Hash)
+          # Recursively handle nested hashes
+          processed_hash[key] = run_procs_on(value, instance)
+        elsif value.is_a?(Array)
+          # Process arrays, replacing any procs
+          processed_hash[key] = value.map do |element|
+            element.is_a?(Proc) ? instance.instance_exec(&element) : element
           end
-        end
-      end
-      results
-    end
-
-    def execute(operations_hash)
-      results = {}
-
-      operations_hash.each do |key, operations|
-        if operations.is_a?(Hash)
-          results[key] = execute(operations)
-        elsif operations.is_a?(Array)
-          current_value = []
-
-          # Process each operation in order
-          operations.each do |operation_hash|
-            operation_hash.each do |operation, value|
-              current_value = execute_operation(operation.to_sym, current_value, value)
-            end
-          end
-
-          # Flatten array and convert to string if not a hash
-          results[key] = current_value.join(" ")
+        elsif value.is_a?(Proc)
+          # If it's a proc, execute it with the instance
+          processed_hash[key] = instance.instance_exec(&value)
         else
-          results[key] = operations
+          # If it's not a proc or a hash, keep it as is
+          processed_hash[key] = value
         end
-      end
-
-      results
-    end
-
-    def execute_operation(operation, current_value, value)
-      case operation
-      when :append
-        current_value + value
-      when :prepend
-        value + current_value
-      when :remove
-        current_value - value
-      when :set
-        value
-      else
-        current_value
       end
     end
   end

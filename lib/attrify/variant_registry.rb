@@ -5,7 +5,7 @@ require "active_support/core_ext/object/blank"
 require "active_support/core_ext/string/inflections"
 
 require "attrify/parser"
-require "attrify/attribute_set"
+require "attrify/variant"
 require "attrify/helpers"
 
 module Attrify
@@ -38,7 +38,7 @@ module Attrify
       @defaults = value
     end
 
-    # Fetch the correct attribute set, with caching
+    # Fetch the correct variant, with caching
     def fetch(variant: {}, adjust: {})
       # Generate a cache key based on the variant and adjustment inputs
       cache_key = generate_cache_key(variant, adjust)
@@ -48,11 +48,8 @@ module Attrify
         return @cache[cache_key] 
       end
 
-      # Otherwise, compute the attribute set
-      attribute_set = compute_attribute_set(variant: variant, adjust: adjust)
-      
       # Store the result in the cache and return it
-      @cache[cache_key] = attribute_set
+      @cache[cache_key] = compute_variant(variant: variant, adjust: adjust)
     end
 
     def dup
@@ -73,7 +70,7 @@ module Attrify
       "#{variant.sort.to_h}_#{adjust.sort.to_h}"
     end
 
-    def compute_attribute_set(variant: {}, adjust: {})
+    def compute_variant(variant: {}, adjust: {})
       input_variants = variant
       input_adjustments = Parser.parse_slots(adjust)
 
@@ -98,7 +95,7 @@ module Attrify
       # Apply user-specified adjustments
       deep_merge_hashes!(result, input_adjustments)
 
-      AttributeSet.new(result)
+      Variant.new(result)
     end
   end
 end
