@@ -6,9 +6,12 @@ require "active_support/core_ext/string/inflections"
 
 require "attrify/parser"
 require "attrify/attribute_set"
+require "attrify/helpers"
 
 module Attrify
   class VariantRegistry
+    include Helpers
+
     attr_reader :base, :variants, :defaults, :compounds
 
     def initialize(base: {}, variants: {}, defaults: {}, compounds: [])
@@ -26,13 +29,13 @@ module Attrify
     def variants=(value)
       @variants = Parser.parse_variants(value)
     end
-  
-    def defaults=(value)
-      @defaults = value
-    end
-  
+
     def compounds=(value)
       @compounds = Parser.parse_compounds(value)
+    end
+
+    def defaults=(value)
+      @defaults = value
     end
 
     # Fetch the correct attribute set, with caching
@@ -96,30 +99,6 @@ module Attrify
       deep_merge_hashes!(result, input_adjustments)
 
       AttributeSet.new(result)
-    end
-
-    def deep_merge_hashes!(hash1, hash2)
-      hash1.merge!(hash2) do |key, oldval, newval|
-        if oldval.is_a?(Hash)
-          deep_merge_hashes(oldval, newval)
-        elsif oldval.is_a?(Array)
-          oldval + newval  # Concatenate arrays
-        else
-          newval  # In case of conflicting types or non-container types, prefer newval
-        end
-      end
-    end
-
-    def deep_merge_hashes(hash1, hash2)
-      hash1.merge(hash2) do |key, oldval, newval|
-        if oldval.is_a?(Hash)
-          deep_merge_hashes(oldval, newval)
-        elsif oldval.is_a?(Array)
-          oldval + newval  # Concatenate arrays
-        else
-          newval
-        end
-      end
     end
   end
 end

@@ -5,9 +5,12 @@ require "action_view"
 module Attrify
   class AttributeSet
     include ActionView::Helpers::TagHelper
+    attr_reader :value
+    attr_reader :has_procs
 
     def initialize(value)
       @value = value
+      @has_procs = false
     end
 
     def to_html
@@ -30,7 +33,7 @@ module Attrify
     end
 
     def with_procs(instance)
-      AttributeSet.new(value: run_procs(@value, instance))
+      AttributeSet.new(run_procs(@value, instance))
     end
 
     def to_hash
@@ -124,6 +127,8 @@ module Attrify
 
           # Flatten array and convert to string if not a hash
           results[key] = current_value.join(" ")
+        else
+          results[key] = operations
         end
       end
 
