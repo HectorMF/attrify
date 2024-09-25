@@ -29,44 +29,49 @@ module Attrify
         return "ERROR: can't convert a variant to HTML"
       end
 
-      tag.attributes(@attributes[:adjust]) if @attributes.key?(:adjust)
+      if @attributes.key?(:adjust)
+        attribs = merge_arrays(@attributes[:adjust])
+        puts "MERGED ATTRIBUTES: #{attribs}"
+        tag.attributes(attribs) 
+      end
     end
 
     def evaluate_procs(instance)
       if @has_procs
-        AttributeSet.new(run_procs_on(@attributes, instance), false)
+        AttributeSet.new(merge_arrays(run_procs_on(@attributes, instance)), false)
       else
+        @attributes = merge_arrays(@attributes)
         self
       end
     end
 
     def to_hash
-      @attributes
+      @attributes[:adjust] || {}
     end
 
     # Retrieve value by key
     def [](key)
-      @attributes[key]
+      @attributes[:adjust][key]
     end
 
     # Set value by key
     def []=(key, value)
-      @attributes[key] = value
+      @attributes[:adjust][key] = value
     end
 
     # Iterate like a hash
     def each(&block)
-      @attributes.each(&block)
+      @attributes[:adjust].each(&block)
     end
 
     # Return all keys
     def keys
-      @attributes.keys
+      @attributes[:adjust].keys
     end
 
     # Return all values
     def values
-      @attributes
+      @attributes[:adjust]
     end
 
     def to_s
@@ -74,6 +79,23 @@ module Attrify
     end
 
     private
+
+    def merge_arrays(hash)
+      hash.transform_values do |value|
+        case value
+        when Hash
+          merge_arrays(value)  # Recursively process nested hashes
+        when Array
+          if value.all? { |v| v.is_a?(String) }
+            value.join(' ')    # Join array of strings into a single string
+          else
+            value.map { |v| v.is_a?(Hash) ? merge_arrays(v) : v }
+          end
+        else
+          value  # Return the value as is if it's neither a Hash nor an Array
+        end
+      end
+    end
 
     # Recursively traverse a hash and run any procs
     def run_procs_on(hash, instance)

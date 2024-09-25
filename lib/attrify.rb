@@ -30,42 +30,16 @@ module Attrify
     end
   end
   
-  def attribs(slot: :main, variant: {}, adjust: {})
+  def attribs(slot: :main, **args)
     @attr_options ||= {}
-
-    # Use defaults from @attr_options if they exist, otherwise fall back to the passed arguments
-    variant = @attr_options[:variant] ? @attr_options[:variant].merge(variant) : variant
-    adjust = @attr_options[:adjust] ? @attr_options[:adjust].merge(adjust) : adjust
-
-    # Fetch the variant and safely dig into the nested slots
-    variant = self.class.variant_registry&.fetch(variant: variant, adjust: adjust)
-    # Explicitly handle single or multiple slots
-    slots = slot.is_a?(Array) ? slot : [slot] 
-    # Use dig if we have a valid attribute set
-    variant.dig(*slots).evaluate_procs(self)
-  end
-
-  # Add a `with_attribs` method to handle attribute merging
-  def with_attributes(attributes)
-    if attributes.is_a?(Hash)
-      @attr_options = attributes
-    end
-    self
-  end
-
-  def variant(**options)
-    @attr_options ||= {}
-    @attr_options[:variant] = options
-    self
-  end
-
-  def adjust(**options)
-    @attr_options ||= {}
-    @attr_options[:adjust] = options
-    self
-  end
+    arguments = @attr_options.merge(args)
   
-  def attr_options
-    @attr_options ||= {}
+    variant = self.class.variant_registry&.fetch(**arguments)
+    variant.dig(*Array(slot)).evaluate_procs(self)
+  end
+
+  def with_attributes(**args)
+    @attr_options = args
+    self
   end
 end

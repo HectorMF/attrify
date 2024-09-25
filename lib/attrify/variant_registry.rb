@@ -39,7 +39,23 @@ module Attrify
     end
 
     # Fetch the correct variant, with caching
-    def fetch(variant: {}, adjust: {})
+    def fetch(**args)
+      # Split args into variant and other
+      variant = args.select { |k, _| variants.keys.include?(k) }
+      adjust = args.reject { |k, _| variants.keys.include?(k) }
+
+      # convert variants in the format color: ["primary"] to color: :primary
+      variant = variant.transform_values do |value|
+        if value.is_a?(Array)
+          # Join array elements into a string and convert to symbol
+          merged_value = value.join('_')
+          merged_value.to_sym
+        else
+          # If the value is not an array, convert it directly to a symbol
+          value.to_sym
+        end
+      end
+
       # Generate a cache key based on the variant and adjustment inputs
       cache_key = generate_cache_key(variant, adjust)
 

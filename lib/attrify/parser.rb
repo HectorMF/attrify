@@ -5,7 +5,7 @@ module Attrify
   class Parser
 
     OPERATIONS = [:append, :prepend, :remove, :set].freeze
-    ALLOWED_NESTED_FIELDS = [:data].freeze
+    ALLOWED_NESTED_FIELDS = [:data, :aria].freeze
 
     class << self
       include Helpers

@@ -16,16 +16,11 @@ module Attrify
 
       @has_procs = result[:has_procs]
       @attributes = result[:value]
-      puts "OPERATIONS: #{@operations}"
-      puts "ATTRIBUTES: #{@attributes}"
     end
 
     def dig(*keys)
       result = @attributes.dig(*keys)
-      puts "ATTRIBUTESSSSS:" + @attributes.to_s
-      puts "Keys: #{keys}"
-      puts "RESULT: #{result}"
-      puts "HAS_PROCS: #{@has_procs}"
+
       if !result.nil?
         return AttributeSet.new(result, @has_procs)
       end
@@ -36,8 +31,8 @@ module Attrify
 
     def cache_result(hash)
       results = {}
-      has_procs = false
-
+      has_procs = false 
+      puts "CACHING: #{hash}"
       hash.each do |key, operations|
         if operations.is_a?(Hash)
           result = cache_result(operations)
@@ -45,15 +40,11 @@ module Attrify
           has_procs = true if result[:has_procs]
         elsif operations.is_a?(Array)
           current_value = []
-          puts "OPERATIONS: #{operations}"
+
           # Process each operation in order
           operations.each do |operation_hash|
             operation_hash.each do |operation, value|
-              puts "OPERATION: #{operation}"
-              puts "VALUE: #{value}"
-  
               has_procs = true if value.any? { |c| c.is_a?(Proc) }
-                          puts "proc #{has_procs}"
               current_value = execute_operation(operation.to_sym, current_value, value)
             end
           end
@@ -65,7 +56,7 @@ module Attrify
           results[key] = operations
         end
       end
-
+      puts "Result: #{results}"
       { value: results, has_procs: has_procs }
     end
 

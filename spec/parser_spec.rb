@@ -465,5 +465,19 @@ RSpec.describe Attrify::Parser do
         expect(Attrify::Parser.parse_defaults(defaults)).to eq({})
       end
     end
+
+
+      
+    context 'when defaults is an empty hash' do
+      it 'returns an empty hash without errors' do
+        defaults = {
+          data:
+          {
+            controller: "click->alert#close"
+          }
+        }
+        expect(Attrify::Parser.parse_slots(defaults)).to eq({})
+      end
+    end
   end
 end
