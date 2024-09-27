@@ -15,8 +15,8 @@ module Attrify
         @compounds = []
       end
 
-      def build(&block)
-        instance_eval(&block)
+      def build(&)
+        instance_eval(&)
         self
       end
 
@@ -30,12 +30,12 @@ module Attrify
         end
       end
 
-      def variant(name, &block)
-        @variants[name] = Variant.new.build(&block)
+      def variant(name, &)
+        @variants[name] = Variant.new.build(&)
       end
 
-      def compound(variants, &block)
-        @compounds.concat([{variants: variants, adjust: Compound.new.build(&block)}])
+      def compound(variants, &)
+        @compounds.concat([{variants: variants, attributes: Compound.new.build(&)}])
       end
 
       def default(defaults)

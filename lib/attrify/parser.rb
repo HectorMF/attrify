@@ -1,9 +1,9 @@
 # frozen_string_literal: true
-require_relative 'helpers' 
+
+require_relative "helpers"
 
 module Attrify
   class Parser
-
     OPERATIONS = [:append, :prepend, :remove, :set].freeze
     ALLOWED_NESTED_FIELDS = [:data, :aria].freeze
 
@@ -29,27 +29,27 @@ module Attrify
         # Ensure the compounds structure is an array
         raise ArgumentError, "Invalid compounds structure: Expected an Array" unless compounds.is_a?(Array)
         return [] if compounds.empty?
-      
+
         compounds.map do |compound|
-          # Ensure each compound is a Hash and contains :variant and :adjust keys
-          unless compound.is_a?(Hash) && compound.key?(:variants) && compound.key?(:adjust)
-            raise ArgumentError, "Invalid compound structure: Each compound must have :variants and :adjust keys"
+          # Ensure each compound is a Hash and contains :variant and :attributes keys
+          unless compound.is_a?(Hash) && compound.key?(:variants) && compound.key?(:attributes)
+            raise ArgumentError, "Invalid compound structure: Each compound must have :variants and :attributes keys"
           end
-      
-          # Parse the adjust section using parse_slots
+
+          # Parse the attributes section using parse_slots
           {
             variants: compound[:variants],         # Keep the variant as it is
-            adjust: parse_slots(compound[:adjust]) # Parse the adjust section using parse_slots
+            attributes: parse_slots(compound[:attributes]) # Parse the attributes section using parse_slots
           }
         end
       end
-      
+
       def parse_defaults(defaults)
         # Ensure the defaults is a hash
         unless defaults.is_a?(Hash)
           raise ArgumentError, "Defaults must be a hash, got #{defaults.class}"
         end
-      
+
         # Ensure that all keys and values are symbols
         unless defaults.all? { |key, value| key.is_a?(Symbol) && value.is_a?(Symbol) }
           raise ArgumentError, "Defaults must be a flat hash of symbols. Got: #{defaults.inspect}"
@@ -58,40 +58,38 @@ module Attrify
         defaults
       end
 
-
-      
       def parse_slot(slot)
         raise ArgumentError, "Invalid slot structure: Expected a Hash #{slot}" unless slot.is_a?(Hash)
 
         variants = slot[:variant] || {}
-        adjustments = slot[:adjust] || {}
+        operations = slot[:attributes] || {}
 
         nested_slots = nested_slots(slot)
-        additional_adjustments = slot.reject { |key, _| [:variant, :adjust].include?(key) || nested_slots.include?(key) }
-        adjustments = deep_merge_hashes!(adjustments, additional_adjustments)
+        additional_operations = slot.reject { |key, _| [:variant, :attributes].include?(key) || nested_slots.include?(key) }
+        operations = deep_merge_hashes!(operations, additional_operations)
 
         unless valid_variant_structure?(variants)
-          raise ArgumentError, "Invalid slot structure: Variant structure is invalid #{slot}"   
-        end 
+          raise ArgumentError, "Invalid slot structure: Variant structure is invalid #{slot}"
+        end
 
-        unless valid_adjustment_structure?(adjustments)
-          raise ArgumentError, "Invalid slot structure: Adjustment structure is invalid #{slot}"   
+        unless valid_operations_structure?(operations)
+          raise ArgumentError, "Invalid slot structure: Operations structure is invalid #{slot}"
         end
 
         parsed_slot = {}
         parsed_slot[:variant] = variants unless variants.empty?
-        parsed_slot[:adjust] = parse_operations(adjustments) unless adjustments.empty?
+        parsed_slot[:attributes] = parse_operations(operations) unless operations.empty?
         # Recursively handle nested slots
         nested_slots.each do |nested_slot_name|
           parsed_slot[nested_slot_name] = parse_slot(slot[nested_slot_name])
         end
         parsed_slot
       end
-      
+
       def parse_slots(slots)
         parsed_value = parse_slot(slots)
-        if parsed_value.key?(:variant) || parsed_value.key?(:adjust)
-          parsed_value = { main: parsed_value }
+        if parsed_value.key?(:variant) || parsed_value.key?(:attributes)
+          parsed_value = {main: parsed_value}
         end
         parsed_value
       end
@@ -101,7 +99,13 @@ module Attrify
         when Hash
           # Check if the hash is a simple operation or needs further parsing
           if is_simple_operation?(value)
-            value.transform_values { |v| v.is_a?(Array) ? v.map { |x| x.is_a?(Proc) ? x : x.to_s } : [v.is_a?(Proc) ? v : v.to_s] }
+            value.transform_values { |v|
+              if v.is_a?(Array)
+                v.map { |x| x.is_a?(Proc) ? x : x.to_s }
+              else
+                [v.is_a?(Proc) ? v : v.to_s]
+              end
+            }
           else
             value.transform_values { |v|
               parsed_operation = parse_operations(v)
@@ -131,11 +135,11 @@ module Attrify
       private
 
       def nested_slots(hash)
-        # Filter out the keys that are not variant, adjust, or in ALLOWED_NESTED_FIELDS and have hash values
+        # Filter out the keys that are not variant, attributes, or in ALLOWED_NESTED_FIELDS and have hash values
         hash.keys.select do |key|
           value = hash[key]
-          value.is_a?(Hash) && ![:variant, :adjust].include?(key) && 
-          !ALLOWED_NESTED_FIELDS.include?(key) && !is_simple_operation?(value)
+          value.is_a?(Hash) && ![:variant, :attributes].include?(key) &&
+            !ALLOWED_NESTED_FIELDS.include?(key) && !is_simple_operation?(value)
         end
       end
 
@@ -146,8 +150,8 @@ module Attrify
         end
       end
 
-      def valid_adjustment_structure?(adjustments)
-        adjustments.all? do |key, value|
+      def valid_operations_structure?(operations)
+        operations.all? do |key, value|
           # Check if the value is a Hash and whether the key is allowed to have nested values
           !value.is_a?(Hash) || ALLOWED_NESTED_FIELDS.include?(key) || is_simple_operation?(value)
         end

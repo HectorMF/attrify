@@ -7,6 +7,7 @@ RSpec.describe Attrify::VariantRegistry do
     it "returns base attributes when no variants are specified" do
       variant = Attrify::VariantRegistry.new(
         base: {
+          color: :primary,
           id: 10,
           class: %w[inline-flex items-center justify-center],
           style: "color: red;",
@@ -17,13 +18,12 @@ RSpec.describe Attrify::VariantRegistry do
       expect(variant.operations).to eq(
         {
           main: {
-            adjust: {
-              id: [{set: ["10"]}],
-              class: [{set: %w[inline-flex items-center justify-center]}],
-              style: [{set: ["color: red;"]}],
-              data: {
-                controller: [{set: ["stimulus_controller"]}]
-              }
+            color: [{set: ["primary"]}],
+            id: [{set: ["10"]}],
+            class: [{set: %w[inline-flex items-center justify-center]}],
+            style: [{set: ["color: red;"]}],
+            data: {
+              controller: [{set: ["stimulus_controller"]}]
             }
           }
         }

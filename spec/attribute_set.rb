@@ -23,7 +23,7 @@ RSpec.describe Attrify::AttributeSet do
     set = Attrify::AttributeSet.new({
       main: {
         adjust: {
-          class: [{set: ->{Time.now.to_s}}]
+          class: [{set: -> { Time.zone.now.to_s }}]
         }
       }
     })
@@ -197,5 +197,4 @@ RSpec.describe Attrify::AttributeSet do
   #     class: %w[text-sm inline-flex items-center justify-center text-base hello world]
   #   })
   # end
-
 end

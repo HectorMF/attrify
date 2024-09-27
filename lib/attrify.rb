@@ -2,6 +2,7 @@
 
 require_relative "attrify/version"
 require_relative "attrify/variant_registry"
+require_relative "attrify/parser"
 
 require_relative "attrify/dsl/engine"
 
@@ -11,8 +12,8 @@ module Attrify
   end
 
   module ClassMethods
-    def attributes(&block)
-      result = DSL::Engine.new.build(&block)
+    def attributes(&)
+      result = DSL::Engine.new.build(&)
       config = variant_registry
       config.base = result.base_attr
       config.variants = result.variants
@@ -29,13 +30,20 @@ module Attrify
         end
     end
   end
-  
+  include Helpers
   def attribs(slot: :main, **args)
     @attr_options ||= {}
-    arguments = @attr_options.merge(args)
-  
-    variant = self.class.variant_registry&.fetch(**arguments)
-    variant.dig(*Array(slot)).evaluate_procs(self)
+
+    new_arguments = if slot == :main
+      args
+    else
+      {slot => args}
+    end
+
+    merged_arguments = deep_merge_hashes(@attr_options, new_arguments)
+
+    variant = self.class.variant_registry&.fetch(**merged_arguments)
+    variant.values_for(instance: self, keys: Array(slot))
   end
 
   def with_attributes(**args)

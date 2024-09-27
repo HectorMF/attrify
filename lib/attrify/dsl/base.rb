@@ -5,13 +5,13 @@ module Attrify
         @base = {}
       end
 
-      def build(&block)
-        instance_eval(&block)
+      def build(&)
+        instance_eval(&)
         @base
       end
 
       def slot(name, attributes = nil, &block)
-        if block_given?
+        if block
           # If a block is provided, we need to create a nested structure
           @base[name] = self.class.new.build(&block) # Recursively build nested slots
         elsif attributes.is_a?(Hash)

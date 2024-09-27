@@ -5,8 +5,8 @@ module Attrify
         @variants = {}
       end
 
-      def build(&block)
-        instance_eval(&block)
+      def build(&)
+        instance_eval(&)
         @variants
       end
 

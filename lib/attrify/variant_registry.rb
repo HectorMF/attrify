@@ -25,7 +25,7 @@ module Attrify
     def base=(value)
       @base = Parser.parse_base(value)
     end
-  
+
     def variants=(value)
       @variants = Parser.parse_variants(value)
     end
@@ -35,81 +35,72 @@ module Attrify
     end
 
     def defaults=(value)
-      @defaults = value
+      @defaults = Parser.parse_defaults(value)
     end
 
     # Fetch the correct variant, with caching
     def fetch(**args)
-      # Split args into variant and other
-      variant = args.select { |k, _| variants.keys.include?(k) }
-      adjust = args.reject { |k, _| variants.keys.include?(k) }
+      # Split args into variant and operations
+      variant_keys = variants.keys
+      variant_args = {}
+      operation_args = {}
 
-      # convert variants in the format color: ["primary"] to color: :primary
-      variant = variant.transform_values do |value|
-        if value.is_a?(Array)
-          # Join array elements into a string and convert to symbol
-          merged_value = value.join('_')
-          merged_value.to_sym
+      args.each do |key, value|
+        if variant_keys.include?(key)
+          variant_args[key] = Array(value).join("_").to_sym
         else
-          # If the value is not an array, convert it directly to a symbol
-          value.to_sym
+          operation_args[key] = value
         end
       end
 
-      # Generate a cache key based on the variant and adjustment inputs
-      cache_key = generate_cache_key(variant, adjust)
+      operations = Parser.parse_slots(operation_args)
+
+      cache_key = generate_cache_key(variant_args)
 
       # Return the cached result if it exists
-      if @cache.key?(cache_key)
-        return @cache[cache_key] 
+      unless @cache.key?(cache_key)
+        @cache[cache_key] = compute_variant(variant: variant_args)
       end
 
-      # Store the result in the cache and return it
-      @cache[cache_key] = compute_variant(variant: variant, adjust: adjust)
+      @cache[cache_key].adjust(operations)
     end
 
-    def dup
-      copy = super
-      copy.instance_variable_set(:@base, @base.dup)
-      copy.instance_variable_set(:@variants, @variants.dup)
-      copy.instance_variable_set(:@defaults, @defaults.dup)
-      copy.instance_variable_set(:@compounds, @compounds.dup)
-      copy.instance_variable_set(:@cache, {})
-      copy
+    def initialize_copy(orig)
+      super
+      @base = @base.dup
+      @variants = @variants.dup
+      @defaults = @defaults.dup
+      @compounds = @compounds.dup
+      @cache = {}
     end
 
     private
 
-    # Generate a unique key based on the variants and adjustments
-    def generate_cache_key(variant, adjust)
-      # Create a simple string-based key from the variant and adjustment inputs
-      "#{variant.sort.to_h}_#{adjust.sort.to_h}"
+    # Generate a unique key based on the variants
+    def generate_cache_key(variant)
+      variant.sort.to_h.to_s
     end
 
-    def compute_variant(variant: {}, adjust: {})
-      input_variants = variant
-      input_adjustments = Parser.parse_slots(adjust)
-
-      # Start with our default classes
+    def compute_variant(variant: {})
+      # Start with our base attributes
       result = @base.dup
 
-      # Merge defaults with user-specified variants
-      selected_variants = @defaults.merge(input_variants)
+      # Merge default variants with user-specified variants
+      selected_variants = @defaults.merge(variant)
 
-      # Apply variants from the configuration
+      # Apply selected variants to the base attributes
       selected_variants.each do |variant_type, variant_key|
-        next unless (variant_defs = @variants.dig(variant_type, variant_key))
+        variant_defs = @variants.dig(variant_type, variant_key)
+        next unless variant_defs
         deep_merge_hashes!(result, variant_defs)
       end
 
+      # Apply compounds variants
       @compounds.each do |compound_variant|
         if compound_variant[:variants].all? { |key, value| selected_variants[key] == value }
-          deep_merge_hashes!(result, compound_variant[:adjust])
+          deep_merge_hashes!(result, compound_variant[:attributes])
         end
       end
-
-      # Apply user-specified adjustments
-      deep_merge_hashes!(result, input_adjustments)
 
       Variant.new(result)
     end
