@@ -1,4 +1,6 @@
-require "attrify/dsl/nested_variant"
+# frozen_string_literal: true
+
+require_relative "nested_variant"
 
 module Attrify
   module DSL

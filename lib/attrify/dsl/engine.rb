@@ -1,7 +1,8 @@
-require "attrify/dsl/base"
-require "attrify/dsl/variant"
-require "attrify/dsl/compound"
-# require "attrify/dsl/default"
+# frozen_string_literal: true
+
+require_relative "base"
+require_relative "variant"
+require_relative "compound"
 
 module Attrify
   module DSL
