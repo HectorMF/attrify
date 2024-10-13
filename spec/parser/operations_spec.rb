@@ -4,27 +4,42 @@ RSpec.describe Attrify::Parser do
   describe ".parse_operations" do
     context "when input is a string" do
       it "returns an empty set operation for an empty string" do
-        expect(described_class.parse_operations("")).to eq({set: [""]})
+        expect(described_class.parse_operations("")).to eq([{set: [""]}])
       end
 
-      it "parses the string as a set operation" do
-        expect(described_class.parse_operations("border-1")).to eq({set: ["border-1"]})
+      it "parses a string as a set operation" do
+        expect(described_class.parse_operations("border-1")).to eq([{set: ["border-1"]}])
       end
     end
 
     context "when input is an array" do
       it "returns an empty set operation for an empty array" do
-        expect(described_class.parse_operations([])).to eq({set: []})
+        expect(described_class.parse_operations([])).to eq([{set: []}])
       end
 
-      it "parses the array as a set operation with multiple values" do
-        expect(described_class.parse_operations(["border-1", "border-bottom-0"])).to eq({set: ["border-1", "border-bottom-0"]})
+      it "parses a string array as a set operation with multiple values" do
+        expect(described_class.parse_operations(["border-1", "border-bottom-0"])).to eq([{set: ["border-1", "border-bottom-0"]}])
+      end
+
+      it "correctly parses and array of operations" do
+        parsed = described_class.parse_operations([{set: "9"}, {append: "10"}])
+        expect(parsed).to eq([{set: ["9"]}, {append: ["10"]}])
+      end
+
+      it "handles arrays containing mixed types" do
+        parsed = described_class.parse_operations(["border-1", 42, :symbol_value])
+        expect(parsed).to eq([{set: ["border-1", "42", "symbol_value"]}])
+      end
+
+      it "handles arrays containing mixed types and operations" do
+        parsed = described_class.parse_operations(["border-1", 42, :symbol_value, {append: "10"}])
+        expect(parsed).to eq([{set: ["border-1"]}, {set: ["42"]}, {set: ["symbol_value"]}, {append: ["10"]}])
       end
     end
 
-    context "when input is a symbol" do
-      it "parses the symbol as a set operation" do
-        expect(described_class.parse_operations(:border)).to eq({set: ["border"]})
+    context "when input contains a symbol" do
+      it "parses a symbol as a set operation" do
+        expect(described_class.parse_operations(:border)).to eq([{set: ["border"]}])
       end
 
       it "correctly parses a key-value pair where the value is a symbol" do
@@ -43,7 +58,7 @@ RSpec.describe Attrify::Parser do
       end
 
       it "parses an append operation" do
-        expect(described_class.parse_operations({append: "10"})).to eq({append: ["10"]})
+        expect(described_class.parse_operations({append: "10"})).to eq([{append: ["10"]}])
       end
 
       it "parses a nested controller operation with non-string values" do
@@ -61,12 +76,7 @@ RSpec.describe Attrify::Parser do
 
     context "when input contains unexpected types" do
       it "returns an empty set operation for nil input" do
-        expect(described_class.parse_operations(nil)).to eq({set: [""]})
-      end
-
-      it "handles arrays containing mixed types" do
-        parsed = described_class.parse_operations(["border-1", 42, :symbol_value])
-        expect(parsed).to eq({set: ["border-1", "42", "symbol_value"]})
+        expect(described_class.parse_operations(nil)).to eq([{set: [""]}])
       end
 
       it "raises an error for types without a valid to_s" do

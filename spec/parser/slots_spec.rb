@@ -1,43 +1,31 @@
 # frozen_string_literal: true
 
 RSpec.describe Attrify::Parser do
-  describe ".parse_slot" do
-    context "when input is valid" do
-      it "parses a valid slot with a variant" do
-        slot = {variant: {color: :primary}, operations: {append: "test"}}
-        parsed = described_class.parse_slot(slot)
-
-        expect(parsed).to eq({
-          variant: {color: :primary},
-          operations: {append: ["test"]}
-        })
-      end
-
-      it "parses a valid slot without a variant" do
-        slot = {append: "test"}
-        parsed = described_class.parse_slot(slot)
-
-        expect(parsed).to eq({
-          attributes: {append: ["test"]}
-        })
+  describe ".parse_slots" do
+    context "when the input is not a hash" do
+      it "raises an ArgumentError" do
+        expect { Attrify::Parser.parse_slots("not a hash") }.to raise_error(ArgumentError)
       end
     end
 
-    context "when input is invalid" do
-      it "raises an error for non-hash input" do
-        expect { described_class.parse_slot(["invalid", "data"]) }.to raise_error(ArgumentError)
-      end
-
-      it "raises an error for invalid variant structure" do
-        invalid_slot = {variant: "invalid_variant_structure"}
-        expect { described_class.parse_slot(invalid_slot) }
-          .to raise_error(ArgumentError)
+    context "when the input is an empty hash" do
+      it "returns an empty hash" do
+        expect(Attrify::Parser.parse_slots({})).to eq({})
       end
     end
 
-    describe ".parse_slotsss" do
-      it "correctly parses slots 1" do
-        # No Slot defined, so we wrap it in a default key
+    context "when there are circular references" do
+      it "raises a SystemStackError or handles the circular reference" do
+        input = {}
+        input[:self] = input
+
+        expect { Attrify::Parser.parse_slots(input) }.to raise_error(SystemStackError)
+      end
+    end
+
+    context "when no slot name is given" do
+      it "adds the 'main' slot" do
+        # No Slot defined, so we wrap it in a main key
         expect(Attrify::Parser.parse_slots({
           class: %w[rounded-xl border bg-card text-card-foreground shadow w-[350px]],
           id: 10
@@ -52,17 +40,16 @@ RSpec.describe Attrify::Parser do
           }
         )
       end
+    end
 
-      it "correctly parses slots 2" do
-        # Slot defined, so we keep it
+    context "when a single slot is defined" do
+      it "parses the slot correctly" do
         expect(Attrify::Parser.parse_slots({
           button: {
             class: %w[rounded-xl border bg-card text-card-foreground shadow w-[350px]],
             id: 10
           }
         })).to eq(
-
-          # parses to
           {
             button: {
               attributes: {
@@ -73,8 +60,33 @@ RSpec.describe Attrify::Parser do
           }
         )
       end
+    end
 
-      it "correctly parses slots 3" do
+    context "when multiple slots are defined" do
+      it "parses the slots correctly" do
+        slots = {
+          button: {color: :primary, class: "test"},
+          card: {attributes: {class: {append: "card-test"}}}
+        }
+
+        parsed = described_class.parse_slots(slots)
+
+        expect(parsed).to eq({
+          button: {
+            attributes: {
+              color: [{set: ["primary"]}],
+              class: [{set: ["test"]}]
+            }
+          },
+          card: {
+            attributes: {class: [{append: ["card-test"]}]}
+          }
+        })
+      end
+    end
+
+    context "when sub-slots are defined" do
+      it "parses the slots correctly" do
         expect(Attrify::Parser.parse_slots(
           {
             card: {
@@ -157,42 +169,6 @@ RSpec.describe Attrify::Parser do
             }
           }
         )
-      end
-    end
-
-    describe ".parse_slots" do
-      context "when input is a single slot" do
-        it "parses a single slot as the main slot" do
-          slot = {class: "test"}
-          parsed = described_class.parse_slots(slot)
-
-          expect(parsed).to eq({
-            main: {attributes: {class: [{set: ["test"]}]}}
-          })
-        end
-      end
-
-      context "when input contains multiple slots" do
-        it "parses multiple slots with variants and adjust operations" do
-          slots = {
-            button: {color: :primary, class: "test"},
-            card: {attributes: {class: {append: "card-test"}}}
-          }
-
-          parsed = described_class.parse_slots(slots)
-
-          expect(parsed).to eq({
-            button: {
-              attributes: {
-                color: [{set: ["primary"]}],
-                class: [{set: ["test"]}]
-              }
-            },
-            card: {
-              attributes: {class: [{append: ["card-test"]}]}
-            }
-          })
-        end
       end
     end
   end

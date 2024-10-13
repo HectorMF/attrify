@@ -24,23 +24,23 @@ RSpec.describe Attrify::Parser do
           color: {
             primary: {
               main: {
-                operations: {
+                attributes: {
                   class: [{append: %w[bg-blue-500 text-white]}]
                 }
               }
             },
             secondary: {
               main: {
-                operations: {
+                attributes: {
                   class: [{set: %w[bg-purple-500 text-white]}]
                 }
               }
             }
           },
           size: {
-            sm: {main: {operations: {class: [{append: ["text-sm"]}]}}},
-            md: {main: {operations: {class: [{set: ["text-base"]}]}}},
-            lg: {main: {operations: {class: [{set: %w[px-4 py-3 text-lg]}]}}}
+            sm: {main: {attributes: {class: [{append: ["text-sm"]}]}}},
+            md: {main: {attributes: {class: [{set: ["text-base"]}]}}},
+            lg: {main: {attributes: {class: [{set: %w[px-4 py-3 text-lg]}]}}}
           }
         }
 
@@ -75,28 +75,28 @@ RSpec.describe Attrify::Parser do
           color: {
             primary: {
               main: {
-                operations: {
+                attributes: {
                   class: [{append: %w[bg-blue-500 text-white]}]
                 }
               },
               icon: {
-                operations: {
+                attributes: {
                   class: [{append: %w[text-black]}]
                 }
               }
             },
             secondary: {
               main: {
-                operations: {
+                attributes: {
                   class: [{set: %w[bg-purple-500 text-white]}]
                 }
               }
             }
           },
           size: {
-            sm: {main: {operations: {class: [{append: ["text-sm"]}]}}},
-            md: {icon: {operations: {class: [{set: ["text-base"]}]}}},
-            lg: {main: {operations: {class: [{set: %w[px-4 py-3 text-lg]}]}}}
+            sm: {main: {attributes: {class: [{append: ["text-sm"]}]}}},
+            md: {icon: {attributes: {class: [{set: ["text-base"]}]}}},
+            lg: {main: {attributes: {class: [{set: %w[px-4 py-3 text-lg]}]}}}
           }
         }
 

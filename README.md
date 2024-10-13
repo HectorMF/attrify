@@ -62,23 +62,48 @@ Add the attributes to your component's html
 
 Try it out!
 ```ruby
-  # Use default attributes
+  # Use the default attributes
   Button.new() { "Click Me" }
 
   # Use a predefined color and size 
   Button.new(color: :primary, size: :sm) { "Click Me" }
 
-  # Override the attributes as you like
+  # Override the attributes as needed
   Button.new(color: :primary, 
+             id: "special_button",
              class: { remove: "border" }, 
              style: "width: 300px;", 
              href: "https://www.google.com") { "Click Me" }
 ```
 
-## Acknowledgements
+# Operations
+
+To best leverage the variants API it is important to understand it's workings. 
+Under the hood, attributes are parsed into operations. 
+
+List of operations:
+
+```ruby
+{ set: value }
+{ remove: value }
+{ append: value }
+{ prepend: value }
+```
+
+Let's take a look at some examples
+```ruby 
+# The default operation is SET so the following buttons are equivelant
+Button.new(color: :primary, class: "bg-purple-500")
+Button.new(color: :primary, class: { set: "bg-purple-500" })
+
+# We can define multiple operations like this:
+Button.new(color: :primary, class: [{ remove: "bg-blue-500" }, 
+                                    { prepend: "text-black" }])
+```
+# Acknowledgements
 Greatly inspired by Tailwind Variants, ViewComponentContrib::StyleVariants, and what GitHub is doing with Primer::Classify.
 
-## License
+# License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
 

@@ -15,18 +15,14 @@ module Attrify
       end
 
       def parse_variants(variants)
-        # Iterate over each variant (e.g., color, size)
         variants.transform_values do |variant_options|
-          # For each variant, iterate over its options (e.g., primary, secondary, sm, md)
           variant_options.transform_values do |option|
-            # Call parse_slots on the contents of each option and replace its value
             parse_slots(option)
           end
         end
       end
 
       def parse_compounds(compounds)
-        # Ensure the compounds structure is an array
         raise ArgumentError, "Invalid compounds structure: Expected an Array" unless compounds.is_a?(Array)
         return [] if compounds.empty?
 
@@ -38,7 +34,7 @@ module Attrify
 
           # Parse the attributes section using parse_slots
           {
-            variants: compound[:variants],         # Keep the variant as it is
+            variants: compound[:variants], # Keep the variants as they are
             attributes: parse_slots(compound[:attributes]) # Parse the attributes section using parse_slots
           }
         end
@@ -58,27 +54,34 @@ module Attrify
         defaults
       end
 
+      def parse_slots(slots)
+        parsed_value = parse_slot(slots)
+        if parsed_value.key?(:attributes)
+          parsed_value = {main: parsed_value}
+        end
+        parsed_value
+      end
+
+      # {
+      #   class: [{set: %w[bg-blue-500 text-white]}],
+      #   style:  "width:100px",
+      #   data: { controller: "stimulus_controller" },
+      #   # this one is a slot
+      #   nested: { sub_slot: {class:"red"}, class: "10"}
+      # }
       def parse_slot(slot)
         raise ArgumentError, "Invalid slot structure: Expected a Hash #{slot}" unless slot.is_a?(Hash)
 
-        variants = slot[:variant] || {}
-        operations = slot[:attributes] || {}
+        attributes = slot[:attributes] || {}
 
         nested_slots = nested_slots(slot)
-        additional_operations = slot.reject { |key, _| [:variant, :attributes].include?(key) || nested_slots.include?(key) }
-        operations = deep_merge_hashes!(operations, additional_operations)
+        additional_attributes = slot.reject { |key, _| key == :attributes || nested_slots.include?(key) }
 
-        unless valid_variant_structure?(variants)
-          raise ArgumentError, "Invalid slot structure: Variant structure is invalid #{slot}"
-        end
-
-        unless valid_operations_structure?(operations)
-          raise ArgumentError, "Invalid slot structure: Operations structure is invalid #{slot}"
-        end
+        deep_merge_hashes!(attributes, additional_attributes)
 
         parsed_slot = {}
-        parsed_slot[:variant] = variants unless variants.empty?
-        parsed_slot[:attributes] = parse_operations(operations) unless operations.empty?
+        parsed_slot[:attributes] = parse_attributes(attributes) unless attributes.empty?
+
         # Recursively handle nested slots
         nested_slots.each do |nested_slot_name|
           parsed_slot[nested_slot_name] = parse_slot(slot[nested_slot_name])
@@ -86,12 +89,37 @@ module Attrify
         parsed_slot
       end
 
-      def parse_slots(slots)
-        parsed_value = parse_slot(slots)
-        if parsed_value.key?(:variant) || parsed_value.key?(:attributes)
-          parsed_value = {main: parsed_value}
+      #  class: [{set: %w[bg-blue-500 text-white]}]
+      #  style: "width:100px"
+      #  data: { controller: "stimulus_controller" }
+      #  class: "red"
+      #  class: "10"
+      def parse_attributes(attributes)
+        unless attributes.is_a?(Hash)
+          raise ArgumentError, "Invalid attributes list: Expected a Hash, got #{attributes.class}"
         end
-        parsed_value
+
+        if is_simple_operation?(attributes)
+          raise ArgumentError, "Invalid Attributes List: got an operation"
+        end
+
+        parsed_attributes = {}
+
+        attributes.each do |key, value|
+          parsed_attributes[key] = parse_attribute(key, value)
+        end
+        parsed_attributes
+      end
+
+      def parse_attribute(key, value)
+        unless valid_attribute?(key, value)
+          raise ArgumentError, "Invalid attributes list: invalid attribute #{key}"
+        end
+        unless key.is_a?(Symbol)
+          raise ArgumentError, "Attribute: Key must be a symbol #{key}"
+        end
+
+        parse_operations(value)
       end
 
       def parse_operations(value)
@@ -99,13 +127,7 @@ module Attrify
         when Hash
           # Check if the hash is a simple operation or needs further parsing
           if is_simple_operation?(value)
-            value.transform_values { |v|
-              if v.is_a?(Array)
-                v.map { |x| x.is_a?(Proc) ? x : x.to_s }
-              else
-                [v.is_a?(Proc) ? v : v.to_s]
-              end
-            }
+            [parse_operation(value)]
           else
             value.transform_values { |v|
               parsed_operation = parse_operations(v)
@@ -117,48 +139,55 @@ module Attrify
             }
           end
         when Array
-          # Determine if the array is of single operations or plain values
-          if array_of_operations?(value)
-            value.map { |v| parse_operations(v) }
+          if value.any? { |v| is_simple_operation?(v) }
+            value.map { |v| parse_operation(v) }
           else
-            {set: value.map { |v| v.is_a?(Proc) ? v : v.to_s }}
+            [parse_operation(value)]
           end
-        when Proc
-          # For procs, wrap them in a `set` operation
-          {set: [value]}
         else
-          # For other types (e.g., strings, numbers), wrap them in a `set` operation
-          {set: Array(value.to_s)}
+          [parse_operation(value)]
+        end
+      end
+
+      def parse_operation(operation)
+        case operation
+        when Hash
+          if !is_simple_operation?(operation)
+            raise ArgumentError, "Invalid operation: got #{operation}"
+          end
+          operation.transform_values { |v|
+            if v.is_a?(Array)
+              v.map { |x| x.is_a?(Proc) ? x : x.to_s }
+            else
+              [v.is_a?(Proc) ? v : v.to_s]
+            end
+          }
+        when Array
+          {set: operation.map { |v| v.is_a?(Proc) ? v : v.to_s }}
+        when Proc
+          {set: [operation]}
+        else
+          {set: Array(operation.to_s)}
         end
       end
 
       private
 
       def nested_slots(hash)
-        # Filter out the keys that are not variant, attributes, or in ALLOWED_NESTED_FIELDS and have hash values
         hash.keys.select do |key|
           value = hash[key]
-          value.is_a?(Hash) && ![:variant, :attributes].include?(key) &&
-            !ALLOWED_NESTED_FIELDS.include?(key) && !is_simple_operation?(value)
+          next false unless value.is_a?(Hash)
+
+          key != :attributes && !ALLOWED_NESTED_FIELDS.include?(key) && !is_simple_operation?(value)
         end
       end
 
-      def valid_variant_structure?(variant)
-        variant.is_a?(Hash) && variant.all? do |key, value|
-          # Here we check if each pair is a simple key-value where value is not a hash or array
-          !value.is_a?(Hash) && !value.is_a?(Array)
-        end
-      end
-
-      def valid_operations_structure?(operations)
-        operations.all? do |key, value|
-          # Check if the value is a Hash and whether the key is allowed to have nested values
-          !value.is_a?(Hash) || ALLOWED_NESTED_FIELDS.include?(key) || is_simple_operation?(value)
-        end
+      def valid_attribute?(key, value)
+        return true unless value.is_a?(Hash)
+        ALLOWED_NESTED_FIELDS.include?(key) || is_simple_operation?(value)
       end
 
       def is_simple_operation?(operation)
-        # Checks if the hash is a simple operation
         operation.is_a?(Hash) && (operation.keys.size == 1) && OPERATIONS.include?(operation.keys.first)
       end
 

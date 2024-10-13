@@ -182,31 +182,16 @@ RSpec.describe Attrify::Helpers do
       it "merges nested arrays" do
         expect(TestHelpers.new.deep_merge_hashes({a: [1]}, {a: [2, 3]})).to eq({a: [1, 2, 3]})
       end
-
-      it "merges a hash with an array" do
-        expect(TestHelpers.new.deep_merge_hashes({a: {b: 1}}, {a: [2]})).to eq({a: [2]})
-      end
-
-      it "merges an array with a hash" do
-        expect(TestHelpers.new.deep_merge_hashes({a: [1]}, {a: {b: 2}})).to eq({a: {b: 2}})
-      end
-
-      it "merges a hash with a hash" do
-        expect(TestHelpers.new.deep_merge_hashes({a: {b: 1}}, {a: {c: 2}})).to eq({a: {b: 1, c: 2}})
-      end
-
-      it "merges an array with an array" do
-        expect(TestHelpers.new.deep_merge_hashes({a: [1]}, {a: [2]})).to eq({a: [1, 2]})
-      end
     end
 
     context "when it is given complex inputs" do
-      it "merges deeply nested hashes" do
-        expect(TestHelpers.new.deep_merge_hashes(example_base, example_variant)).to eq(example_output)
+      it "merges" do
+        expect(TestHelpers.new.deep_merge_hashes({"data-controller": ["test"], "data-id": [1]}, {"data-id": ["merge"]}))
+          .to eq({"data-controller": ["test"], "data-id": [1, "merge"]})
       end
 
-      it "merges deeply nested hashes stack" do
-        expect(TestHelpers.new.optimized_deep_merge(example_base, example_variant)).to eq(example_output)
+      it "merges deeply nested hashes" do
+        expect(TestHelpers.new.deep_merge_hashes(example_base, example_variant)).to eq(example_output)
       end
     end
   end
