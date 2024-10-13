@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "attrify"
+require_relative "../lib/attrify"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
