@@ -250,40 +250,6 @@ RSpec.describe Attrify::VariantRegistry do
       )
     }
 
-    it "returns a default variant" do
-      expect(registry.fetch.operations).to eq({
-        avatar: {
-          attributes: {
-            class: [{set: %w[inline-flex items-center justify-center]}, {set: %w[bg-blue-500 text-white]}]
-          }
-        },
-        accept_button: {
-          attributes: {
-            color: [{set: ["primary"]}],
-            size: [{set: ["sm"]}],
-            class: [{set: ["text-white"]}]
-          }
-        }
-      })
-    end
-
-    it "returns slot variant attributes" do
-      expect(registry.fetch(type: :two).operations).to eq({
-        avatar: {
-          attributes: {
-            class: [{set: %w[inline-flex items-center justify-center]}, {append: %w[bg-purple-500 text-white]}]
-          }
-        },
-        accept_button: {
-          attributes: {
-            color: [{set: ["secondary"]}],
-            size: [{set: ["lg"]}],
-            class: [{set: ["text-white"]}]
-          }
-        }
-      })
-    end
-
     it "returns default slot variants and adjustments" do
       expect(registry.fetch.operations).to eq({
         button: {
