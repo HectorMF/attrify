@@ -3,7 +3,6 @@
 require_relative "attrify/version"
 require_relative "attrify/variant_registry"
 require_relative "attrify/parser"
-
 require_relative "attrify/dsl/engine"
 
 module Attrify
@@ -30,15 +29,12 @@ module Attrify
         end
     end
   end
+
   include Helpers
+
   def attribs(slot: :main, **args)
     @attr_options ||= {}
-
-    new_arguments = if slot == :main
-      args
-    else
-      {slot => args}
-    end
+    new_arguments = (slot == :main) ? args : {slot => args}
 
     merged_arguments = deep_merge_hashes(@attr_options, new_arguments)
 

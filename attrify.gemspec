@@ -10,11 +10,11 @@ Gem::Specification.new do |spec|
 
   spec.summary = "A powerful and flexible variant API to manage HTML attributes inside your components."
   spec.description = "Whether you're using ViewComponent, Tailwind CSS, or any other framework, Attrify allows you to seamlessly Handle complex UI components with ease."
-  spec.homepage = "https://www.github.com/hectormf/attrify"
+  spec.homepage = "https://rubygems.org/gems/attrify"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.7.0"
 
-  spec.metadata["allowed_push_host"] = "Set to your gem server 'https://example.com'"
+  # spec.metadata["allowed_push_host"] = "Set to your gem server 'https://example.com'"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage

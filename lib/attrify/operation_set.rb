@@ -39,7 +39,7 @@ module Attrify
 
       @operations = run_procs_on(@operations, instance)
       @result = cache_result(@operations)[:value]
-      @result = @result.dig(*keys)
+      @result = @result.dig(*keys) || {}
       if @result.present?
         if @result.has_key?(:attributes)
           @result = @result[:attributes]
