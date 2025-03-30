@@ -174,18 +174,17 @@ class Alert < BaseComponent
   end
 ```
 
-
 ```erb
 <div <%= attributes(slot: :main) %>>
   Hello World
-  <%= render Button.new(**attribs(slot: :button)) %>
+  <%= render Button.new(**attributes(slot: :button)) %>
 </div>
 ```
 **Note:** You can override like this as well
 ```erb
-<div <%= attribs(slot: :main, class: { append: "h-10" }) %>>
+<div <%= attributes(slot: :main, class: { append: "h-10" }) %>>
   Hello World
-  <%= render Button.new(**attribs(slot: :button, size: :xl)) %>
+  <%= render Button.new(**attributes(slot: :button, size: :xl)) %>
 </div>
 ```
 
