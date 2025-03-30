@@ -46,9 +46,19 @@ module Attrify
           raise ArgumentError, "Defaults must be a hash, got #{defaults.class}"
         end
 
-        # Ensure that all keys and values are symbols
-        unless defaults.all? { |key, value| key.is_a?(Symbol) && value.is_a?(Symbol) }
-          raise ArgumentError, "Defaults must be a flat hash of symbols. Got: #{defaults.inspect}"
+        defaults.each_with_object({}) do |(key, value), hash|
+          # Ensure keys are symbols.
+          unless key.is_a?(Symbol)
+            raise ArgumentError, "All keys must be symbols. Got key #{key.inspect} (#{key.class})"
+          end
+
+          hash[key] = if value.is_a?(Symbol)
+            value
+          elsif value.respond_to?(:to_s)
+            value.to_s
+          else
+            raise ArgumentError, "Value #{value.inspect} cannot be used as an default value"
+          end
         end
 
         defaults

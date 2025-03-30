@@ -42,12 +42,13 @@ module Attrify
     def fetch(**args)
       # Split args into variant and operations
       variant_keys = variants.keys
+
       variant_args = {}
       operation_args = {}
 
       args.each do |key, value|
         if variant_keys.include?(key)
-          variant_args[key] = Array(value).join("_").to_sym
+          variant_args[key] = value #Array(value).join("_").to_sym
         else
           operation_args[key] = value
         end

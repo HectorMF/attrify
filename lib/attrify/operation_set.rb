@@ -36,7 +36,6 @@ module Attrify
 
     def values_for(instance:, keys:)
       # if @has_procs
-
       @operations = run_procs_on(@operations, instance)
       @result = cache_result(@operations)[:value]
       @result = @result.dig(*keys) || {}

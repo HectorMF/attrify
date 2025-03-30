@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
 require_relative "nested_variant"
+require_relative "../helpers"
 
 module Attrify
   module DSL
     class Variant
+      include Helpers
+
       def initialize
         @variants = {}
       end
@@ -28,6 +31,10 @@ module Attrify
         else
           super
         end
+      end
+
+      def value(value, *args, &block)
+        method_missing(value, *args, &block) 
       end
     end
   end

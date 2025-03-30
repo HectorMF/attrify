@@ -2,6 +2,42 @@
 
 RSpec.describe Attrify::Parser do
   describe ".parse_variants" do
+    context "when a variant with non-symbol keys is defined" do
+      it "returns the correctly parsed variants" do
+        variants = {
+          open: {
+            1.1 => {
+              class: {append: %w[bg-blue-500 text-white]}
+            },
+            false => {
+              class: %w[bg-purple-500 text-white]
+            }
+          }
+        }
+
+        parsed_variants = {
+          open: {
+            1.1 => {
+              main: {
+                attributes: {
+                  class: [{append: %w[bg-blue-500 text-white]}]
+                }
+              }
+            },
+            false => {
+              main: {
+                attributes: {
+                  class: [{set: %w[bg-purple-500 text-white]}]
+                }
+              }
+            }
+          }
+        }
+
+        expect(Attrify::Parser.parse_variants(variants)).to eq(parsed_variants)
+      end
+    end
+    
     context "two variants with no slot are defined" do
       it "returns the correctly parsed variants" do
         variants = {
